@@ -38,6 +38,8 @@
               {{ review.date }}
             </h6>
             <p class="card-text">{{ review.comment }}</p>
+
+            <!-- Edit/Delete buttons (only for review owner) -->
             {% if user.is_authenticated and user == review.user %}
             <a class="btn btn-primary"
               href="{% url 'movies.edit_review' id=template_data.movie.id review_id=review.id %}">
@@ -48,7 +50,22 @@
               Delete
             </a>
             {% endif %}
+
+            <!-- Report button (only for other logged-in users) -->
+            {% if user.is_authenticated and user != review.user %}
+            <form method="post"
+              action="{% url 'movies.report_review' id=template_data.movie.id review_id=review.id %}"
+              class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="reason" value="Inappropriate/Offensive" />
+              <button class="btn btn-outline-danger btn-sm" type="submit" title="Report as inappropriate">
+                <i class="fa fa-flag"></i> Report
+              </button>
+            </form>
+            {% endif %}
           </li>
+          {% empty %}
+          <li class="list-group-item">No reviews yet.</li>
           {% endfor %}
         </ul>
 
@@ -86,20 +103,3 @@
   </div>
 </div>
 {% endblock content %}
-
-<!-- Review reporting UI -->
-
-{# Report inappropriate review button #}
-{% if user.is_authenticated and review.user_id != user.id %}
-<form method="post" action="{% url 'movies.report_review' id=template_data.movie.id review_id=review.id %}" class="d-inline">
-  {% csrf_token %}
-  <input type="hidden" name="reason" value="Inappropriate/Offensive" />
-  <button class="btn btn-outline-danger btn-sm" type="submit" title="Report as inappropriate">
-    <i class="fa fa-flag"></i> Report
-  </button>
-</form>
-{% endif %}
-
-
-{# Ensure removed reviews aren't shown even if view forgets to filter #}
-<style>.review-removed{display:none;}</style>
