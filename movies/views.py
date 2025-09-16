@@ -61,3 +61,18 @@ def delete_review(request, id, review_id):
     review = get_object_or_404(Review, id=review_id, user=request.user)
     review.delete()
     return redirect('movies.show', id=id)
+
+from django.core.paginator import Paginator
+
+def top_comments(request):
+    """Aggregate all reviews across all movies, newest-first.
+
+    Renders a simple list: comment, author, movie, date.
+    """
+    # Newest-first; if you later add "likes" or "upvotes", replace with .order_by('-likes', '-date')
+    all_reviews = Review.objects.select_related('movie', 'user').order_by('-date')
+    paginator = Paginator(all_reviews, 20)  # 20 comments per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    template_data = {'title': 'Top Comments', 'page_obj': page_obj}
+    return render(request, 'movies/top_comments.html', {'template_data': template_data})
