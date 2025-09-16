@@ -55,7 +55,14 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'moviesstore.urls'
+ALLOWED_HOSTS = [
+    "jlin444.pythonanywhere.com",   # <-- your PA domain
+    "localhost", "127.0.0.1",       # keep for local dev (optional)
+]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://jlin444.pythonanywhere.com",
+]
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
