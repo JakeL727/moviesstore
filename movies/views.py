@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Movie, Review
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 def index(request):
     search_term = request.GET.get('search')
@@ -16,7 +17,8 @@ def index(request):
 
 def show(request, id):
     movie = Movie.objects.get(id=id)
-    reviews = Review.objects.filter(movie=movie)
+    # Only show non-removed reviews
+    reviews = Review.objects.filter(movie=movie, is_removed=False)
 
     template_data = {}
     template_data['title'] = movie.name
@@ -62,17 +64,21 @@ def delete_review(request, id, review_id):
     review.delete()
     return redirect('movies.show', id=id)
 
-from django.core.paginator import Paginator
+@login_required
+def report_review(request, id, review_id):
+    review = get_object_or_404(Review, id=review_id, movie_id=id)
+    if review.user_id == request.user.id:
+        messages.error(request, "You cannot report your own review.")
+        return redirect('movies.show', id=id)
 
-def top_comments(request):
-    """Aggregate all reviews across all movies, newest-first.
+    try:
+        from .models import Report
+        reason = request.POST.get('reason', '').strip()
+        Report.objects.create(review=review, reporter=request.user, reason=reason)
+    except Exception:
+        pass
 
-    Renders a simple list: comment, author, movie, date.
-    """
-    # Newest-first; if you later add "likes" or "upvotes", replace with .order_by('-likes', '-date')
-    all_reviews = Review.objects.select_related('movie', 'user').order_by('-date')
-    paginator = Paginator(all_reviews, 20)  # 20 comments per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    template_data = {'title': 'Top Comments', 'page_obj': page_obj}
-    return render(request, 'movies/top_comments.html', {'template_data': template_data})
+    review.is_removed = True
+    review.save(update_fields=['is_removed'])
+    messages.success(request, "Thanks for the report. The review has been removed from this page.")
+    return redirect('movies.show', id=id)

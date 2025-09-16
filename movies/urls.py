@@ -2,8 +2,8 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path('comments/top/', views.top_comments, name='movies.top_comments'),
-
+    path('<int:id>/review/<int:review_id>/report/', views.report_review, name='movies.report_review'),
+    path('<int:id>/review/<int:review_id>/report/', views.report_review, name='movies.report_review'),
     path('', views.index, name='movies.index'),
     path('<int:id>/', views.show, name='movies.show'),
     path('<int:id>/review/create/', views.create_review, name='movies.create_review'),
